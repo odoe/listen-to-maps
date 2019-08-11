@@ -35,13 +35,15 @@ function setup() {
   ], function(Map, MapView, GeoJSONLayer, TimeSlider, Expand, Legend) {
     let layerView;
     let timeSlider;
+    // sound list
+    const hhOn = document.getElementById("hh");
+    const clapOn = document.getElementById("clap");
+    const bassOn = document.getElementById("bass");
+    const snareOn = document.getElementById("snare");
     // p5 setup
     hh = loadSound('assets/hh_sample.mp3', () => {});
-  
     clap = loadSound('assets/clap_sample.mp3', () => {});
-    
     bass = loadSound('assets/bass_sample.mp3', () => {});
-  
     snare = loadSound('assets/snare_ups_sample.mp3', () => {});
   
     hPat = [0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1];
@@ -50,16 +52,25 @@ function setup() {
     sPat = [0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0];
   
     hPhrase = new p5.Phrase('hh', (time) => {
+      if(!hhOn.checked) {
+        return;
+      }
       env.play();
       hh.play(time);
     }, hPat);
     
     cPhrase = new p5.Phrase('clap', (time) => {
+      if(!clapOn.checked) {
+        return;
+      }
       clap.play(time);
     }, cPat);
     
     let count = 0;
     bPhrase = new p5.Phrase('bass', (time) => {
+      if(!bassOn.checked) {
+        return;
+      }
       env.play();
       bass.play(time);
       console.log(timeSlider);
@@ -84,6 +95,9 @@ function setup() {
     }, bPat);
   
     sPhrase = new p5.Phrase('snare', (time) => {
+      if(!snareOn.checked) {
+        return;
+      }
       env.play();
       snare.play(time);
     }, sPat);
@@ -238,6 +252,7 @@ function setup() {
     });
     view.ui.add(timeSlider, "manual");
     view.ui.add(btn, "top-left");
+    view.ui.add("audioList", "top-left");
 
     // wait till the layer view is loaded
     view.whenLayerView(layer).then(function(lv) {

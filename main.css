@@ -35,3 +35,8 @@ body {
 #defaultCanvas0 {
   display: none;
 }
+
+#audioList {
+  list-style: none;
+  padding: 12px;
+}
