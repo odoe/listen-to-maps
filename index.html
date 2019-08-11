@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link
+      rel="stylesheet"
+      href="https://js.arcgis.com/4.12/esri/themes/light/main.css"
+    />
+    <link rel="stylesheet" type="text/css" href="main.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.9.0/p5.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.9.0/addons/p5.dom.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.9.0/addons/p5.sound.min.js"></script>
+    <script src="https://js.arcgis.com/4.12/"></script>
+    <meta charset="utf-8" />
+  </head>
+  <body>
+    <div id="viewDiv">
+      <div id="btn" class="esri-component esri-widget">
+        <div
+          class="esri-widget--button esri-widget esri-interactive"
+          role="button"
+          tabindex="0"
+          title="Audio"
+        >
+          <span
+            aria-hidden="true"
+            role="presentation"
+            class="esri-icon esri-icon-announcement"
+          ></span
+          ><span class="esri-icon-font-fallback-text">Audio</span>
+        </div>
+      </div>
+      <div id="timeSlider"></div>
+      <div id="infoDiv" class="esri-widget">
+        <div><b>USGS Earthquakes</b></div>
+        <br />
+        <div id="statsDiv" class="esri-widget"></div>
+      </div>
+    </div>
+    <script src="time-audio.js"></script>
+  </body>
+</html>
