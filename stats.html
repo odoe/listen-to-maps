@@ -19,7 +19,7 @@
         <li>
           <label>
             <input id="hh" type="checkbox"/>
-            High Hat
+            Hi-Hat
           </label>
         </li>
         <li>
@@ -56,9 +56,13 @@
           ><span class="esri-icon-font-fallback-text">Audio</span>
         </div>
       </div>
-      <div id="timeSlider"></div>
       <div id="infoDiv" class="esri-widget">
         <div><b>Household Income</b></div>
+        <section class="info">
+          <label>Number of households: <span id="infoCount">0</span> <em>(drives BPM)</em></label>
+        </section>
+        <hr />
+        <label><input id="hhPattern" type="checkbox"/> Hi-Hat <em>(driven by avg income)</em></label>
         <section class="patterns">
           <div class="hhP"></div>
           <div class="hhP"></div>
@@ -77,7 +81,90 @@
           <div class="hhP"></div>
           <div class="hhP"></div>
         </section>
+        <label><input id="cPattern" type="checkbox"/> Clap <em>(driven by bitwise of avg income)</em></label>
+        <section class="patterns">
+          <div class="clapP"></div>
+          <div class="clapP"></div>
+          <div class="clapP"></div>
+          <div class="clapP"></div>
+          <div class="clapP"></div>
+          <div class="clapP"></div>
+          <div class="clapP"></div>
+          <div class="clapP"></div>
+          <div class="clapP"></div>
+          <div class="clapP"></div>
+          <div class="clapP"></div>
+          <div class="clapP"></div>
+          <div class="clapP"></div>
+          <div class="clapP"></div>
+          <div class="clapP"></div>
+          <div class="clapP"></div>
+        </section>
+        <label><input id="sPattern" type="checkbox"/> Snare <em>(driven by std dev of income)</em></label>
+        <section class="patterns">
+          <div class="snareP"></div>
+          <div class="snareP"></div>
+          <div class="snareP"></div>
+          <div class="snareP"></div>
+          <div class="snareP"></div>
+          <div class="snareP"></div>
+          <div class="snareP"></div>
+          <div class="snareP"></div>
+          <div class="snareP"></div>
+          <div class="snareP"></div>
+          <div class="snareP"></div>
+          <div class="snareP"></div>
+          <div class="snareP"></div>
+          <div class="snareP"></div>
+          <div class="snareP"></div>
+          <div class="snareP"></div>
+        </section>
+        <label><input id="bPattern" type="checkbox"/> Bass <em>(driven by avg histogram count)</em></label>
+        <section class="patterns">
+          <div class="bassP"></div>
+          <div class="bassP"></div>
+          <div class="bassP"></div>
+          <div class="bassP"></div>
+          <div class="bassP"></div>
+          <div class="bassP"></div>
+          <div class="bassP"></div>
+          <div class="bassP"></div>
+          <div class="bassP"></div>
+          <div class="bassP"></div>
+          <div class="bassP"></div>
+          <div class="bassP"></div>
+          <div class="bassP"></div>
+          <div class="bassP"></div>
+          <div class="bassP"></div>
+          <div class="bassP"></div>
+        </section>
       </div>
+      <div id="histogram" class="esri-component esri-widget">
+          <div><b>Total Household Income</b> <em>(drives bass pattern)</em></div>
+        <div id="slider-container"></div>
+        <section>
+          <div>
+              <div><em>apply to delay</em></div>
+          </div>
+          <label>
+            <input id="hhDelay" type="checkbox"/>
+            Hi-Hat
+          </label>
+          <label>
+            <input id="snareDelay" type="checkbox"/>
+            Snare
+          </label>
+          <label>
+            <input id="clapDelay" type="checkbox"/>
+            Clap
+          </label>
+          <label>
+            <input id="bassDelay" type="checkbox"/>
+            Bass
+          </label>
+        </section>
+      </div>
+      <canvas id="spectrum" width="300px" height="100px"></canvas>
     </div>
     <script src="stats.js"></script>
   </body>

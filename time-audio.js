@@ -73,15 +73,14 @@ function setup() {
       }
       env.play();
       bass.play(time);
-      console.log(timeSlider);
       if (layerView && layerView.effect) {
         const effect = layerView.effect.clone();
         if (timeSlider && timeSlider.viewModel.state === "playing") {
-          effect.includedEffect = 'hue-rotate(90deg) contrast(500%)';
+          effect.includedEffect = 'contrast(500%)';
         }
         else {
           if (count === 0) {
-            effect.includedEffect = 'hue-rotate(90deg) contrast(500%)';
+            effect.includedEffect = 'contrast(500%)';
             count = 1;
           }
           else {
@@ -282,7 +281,7 @@ function setup() {
     });
 
     // watch for time slider timeExtent change
-    timeSlider.watch("timeExtent", function() {
+    timeSlider.watch("timeExtent", () => {
       // only show earthquakes happened up until the end of
       // timeSlider's current time extent.
       layer.definitionExpression =
@@ -310,27 +309,40 @@ function setup() {
 
       layer
         .queryFeatures(statQuery)
-        .then(function(result) {
+        .then((result) => {
           let htmls = [];
           statsDiv.innerHTML = "";
           if (result.error) {
             return result.error;
           } else {
-            if (result.features.length >= 1) {
+            // Max_magnitude 1.55
+            // Average_magnitude 0.8914285714285716
+            // Min_magnitude 0.59
+            // Average_depth 3.9200000000000004
+            // delay.process(clap, 0.12, 0.8, 1000);
+            if (result.features.length >= 1 && result.features[0].attributes["tremor_count"] > 0) {
               var attributes = result.features[0].attributes;
+              let delayTime;
+              let feedback;
+              let lowPass;
               for (let name in statsFields) {
                 if (attributes[name] && attributes[name] != null) {
-                  console.log(name, attributes[name]);
+                  // console.log(name, attributes[name]);
                   if (name === "Max_magnitude") {
-                    delay.process(hh, 0.12, 0.8, attributes[name] * 1000);
+                    lowPass = attributes[name] * 1000;
+                    // delay.process(hh, 0.12, 0.8, attributes[name] * 1000);
                   }
                   if (name === "Min_magnitude") {
-                    delay.process(bass, 0.16, attributes[name] * 2 > 0.9 ? 0.9 : attributes[name] * 2, attributes[name] * 1000);
+                    feedback = attributes[name] > 1 ? 0.9 : attributes[name];
+                    // delay.process(bass, 0.16, attributes[name] * 2 > 0.9 ? 0.9 : attributes[name] * 2, attributes[name] * 1000);
+                  }
+                  if (name === "Average_magnitude") {
+                    delayTime = attributes[name] * 0.10;
+                    // delay.process(clap, 0.12, attributes[name] / 5, attributes[name] * 25);
                   }
                   if (name === "Average_depth") {
-                    delay.process(clap, 0.12, attributes[name] / 5, attributes[name] * 25);
+                    // delay.process(clap, 0.12, attributes[name] / 5, attributes[name] * 25);
                   }
-                  drums.setBPM((result.features[0].attributes["tremor_count"]).toString());
                   const html =
                     "<br/>" +
                     statsFields[name] +
@@ -340,6 +352,12 @@ function setup() {
                   htmls.push(html);
                 }
               }
+              console.log({ delayTime, feedback, lowPass });
+              delay.process(hh, delayTime, feedback, lowPass);
+              delay.process(clap, delayTime, feedback, lowPass);
+              delay.process(snare, delayTime, feedback, lowPass);
+              // delay.process(bass, delayTime, feedback, lowPass);
+              drums.setBPM((result.features[0].attributes["tremor_count"]));
               var yearHtml =
                 "<span>" +
                 result.features[0].attributes["tremor_count"] +
@@ -424,11 +442,6 @@ function setup() {
       expanded: true
     });
     view.ui.add(infoDivExpand, "top-right");
-    
-    view.watch("scale", scale => {
-      console.log(scale);
-      // delay.process(clap, 0.12, 0.8, scale * 0.10);
-    });
     
     btn.addEventListener("click", () => {
       if (hh.isLoaded() && clap.isLoaded() && bass.isLoaded()) {
