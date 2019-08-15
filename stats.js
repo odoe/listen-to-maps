@@ -45,16 +45,9 @@ const cDelay = document.getElementById("clapDelay");
 const sDelay = document.getElementById("snareDelay");
 const bDelay = document.getElementById("bassDelay");
 
-console.log(hhDelay, cDelay, sDelay, bDelay)
-
 // -----------------------------
 // setup() is used by p5
 // -----------------------------
-
-function onStep() {
-  console.log("step");
-}
-
 function setup() {
   createCanvas(1, 1);
   
@@ -173,10 +166,6 @@ function setup() {
     delay = new p5.Delay() 
     
     drums.setBPM('60');
-    
-    delay.process(hh, 0.5, 0.3, 1500);
-    delay.process(clap, 0.12, 0.8, 1000);
-    delay.process(snare, 0.1, 0.6, 2000);
     
     reverb = new p5.Reverb();
     reverb.process(hh, 3, 2);
@@ -364,7 +353,6 @@ function setup() {
             return;
           }
           const attr = features[0].attributes;
-          // console.log(attr);
           const {
             Avg_Estimate_Total,
             Count_Est_Total,
@@ -376,11 +364,25 @@ function setup() {
           delay.process(snare, 0.1, 0.6, Avg_Estimate_Total);
           delay.process(bass, 0.1, 0.6, Avg_Estimate_Total);
           const total = attr["Avg_Estimate_Total"] / 16;
-          const totalStdDev = fieldNames.reduce((a, b) => a + attr[`StdDev_${b}`], 0);
+          const [_, ...names] = fieldNames;
+          const totalStdDev = names.reduce((a, b) => a + attr[`StdDev_${b}`], 0);
           const avgStdDev = totalStdDev / 16;
-          avgPattern = fieldNames.map(field => attr[`Avg_${field}`] > total ? 1 : 0);
-          stdDevPattern = fieldNames.map(field => attr[`StdDev_${field}`] > avgStdDev ? 1 : 0);
-          avgShiftedPattern = avgPattern.map(a => a ^= 1);
+          avgPattern = names.map(field => attr[`Avg_${field}`] > total ? 1 : 0);
+          stdDevPattern = names.map(field => attr[`StdDev_${field}`] > avgStdDev ? 1 : 0);
+          avgShiftedPattern = [];
+          // xor of both avg and stddev
+          for (let i = 0; i < 16; i++) {
+            const a = avgPattern[i];
+            const b = stdDevPattern[i];
+            let c = 0;
+            // fill the gaps
+            if (a === 0 && b === 0) {
+              c = 1;
+            }
+            avgShiftedPattern.push(c);
+          }
+
+          // avgShiftedPattern = avgPattern.map(a => a ^= 1);
 
           // hh pattern
           if (hPatInput.checked) {
@@ -455,7 +457,7 @@ function setup() {
             layerView.effect = null;
             return;
           }
-          // console.log("response!!!", features);
+
           layerView.effect = {
             filter: {
               where: `OBJECTID in (${ oids.join(',') })`

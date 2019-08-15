@@ -321,28 +321,16 @@ function setup() {
             // Average_depth 3.9200000000000004
             // delay.process(clap, 0.12, 0.8, 1000);
             if (result.features.length >= 1 && result.features[0].attributes["tremor_count"] > 0) {
-              var attributes = result.features[0].attributes;
-              let delayTime;
-              let feedback;
-              let lowPass;
+              const attributes = result.features[0].attributes;
+              const maxMag = attributes["Max_magnitude"];
+              const minMag = attributes["Min_magnitude"];
+              const avgMag = attributes["Average_magnitude"];
+              const tremorCount = attributes["tremor_count"];
+              const lowPass = maxMag * 1000;
+              const feedback = minMag > 1 ? 0.9 : minMag;
+              const delayTime = avgMag * 0.10;
               for (let name in statsFields) {
                 if (attributes[name] && attributes[name] != null) {
-                  // console.log(name, attributes[name]);
-                  if (name === "Max_magnitude") {
-                    lowPass = attributes[name] * 1000;
-                    // delay.process(hh, 0.12, 0.8, attributes[name] * 1000);
-                  }
-                  if (name === "Min_magnitude") {
-                    feedback = attributes[name] > 1 ? 0.9 : attributes[name];
-                    // delay.process(bass, 0.16, attributes[name] * 2 > 0.9 ? 0.9 : attributes[name] * 2, attributes[name] * 1000);
-                  }
-                  if (name === "Average_magnitude") {
-                    delayTime = attributes[name] * 0.10;
-                    // delay.process(clap, 0.12, attributes[name] / 5, attributes[name] * 25);
-                  }
-                  if (name === "Average_depth") {
-                    // delay.process(clap, 0.12, attributes[name] / 5, attributes[name] * 25);
-                  }
                   const html =
                     "<br/>" +
                     statsFields[name] +
@@ -352,12 +340,11 @@ function setup() {
                   htmls.push(html);
                 }
               }
-              console.log({ delayTime, feedback, lowPass });
               delay.process(hh, delayTime, feedback, lowPass);
               delay.process(clap, delayTime, feedback, lowPass);
               delay.process(snare, delayTime, feedback, lowPass);
               // delay.process(bass, delayTime, feedback, lowPass);
-              drums.setBPM((result.features[0].attributes["tremor_count"]));
+              drums.setBPM(tremorCount);
               var yearHtml =
                 "<span>" +
                 result.features[0].attributes["tremor_count"] +
