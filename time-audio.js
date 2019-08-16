@@ -132,6 +132,7 @@ function setup() {
 
     // arcgis mapping set up
     const btn = document.getElementById("btn");
+    const img = document.getElementById("audioIcon");
     const layer = new GeoJSONLayer({
       url:
         "https://bsvensson.github.io/various-tests/geojson/usgs-earthquakes-06182019.geojson",
@@ -433,8 +434,12 @@ function setup() {
     btn.addEventListener("click", () => {
       if (hh.isLoaded() && clap.isLoaded() && bass.isLoaded()) {
         if (!drums.isPlaying) {
+          console.log("start music");
+          img.src = "assets/speaker_mute_Icon.svg";
           drums.loop();
         } else {
+          console.log("stop music");
+          img.src = "assets/speaker_Icon.svg";
           drums.stop();
         }
       }

@@ -188,6 +188,7 @@ function setup() {
     // Mapping Set Up
     // -----------------------------
     const btn = document.getElementById("btn");
+    const img = document.getElementById("audioIcon");
     const canvasSpectrum = document.getElementById("spectrum");
     const canvasCtx = canvasSpectrum.getContext("2d");
     const infoCount = document.getElementById("infoCount");
@@ -472,9 +473,11 @@ function setup() {
       if (hh.isLoaded() && clap.isLoaded() && bass.isLoaded()) {
         if (!drums.isPlaying) {
           console.log("start music");
+          img.src = "assets/speaker_mute_Icon.svg";
           drums.loop();
         } else {
           console.log("stop music");
+          img.src = "assets/speaker_Icon.svg";
           drums.stop();
         }
       }
