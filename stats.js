@@ -24,6 +24,7 @@ let stdDevPattern = [];
 
 const WIDTH = 300;
 const HEIGHT = 100;
+const STEPS = 16;
 
 let beat = 1;
 
@@ -361,18 +362,18 @@ function setup() {
           if (!Count_Est_Total) return;
           drums.setBPM(Count_Est_Total);
           // delay.process(hh, 0.5, 0.3, Avg_Estimate_Total);
-          delay.process(clap, 0.12, 0.8, Avg_Estimate_Total);
-          delay.process(snare, 0.1, 0.6, Avg_Estimate_Total);
-          delay.process(bass, 0.1, 0.6, Avg_Estimate_Total);
-          const total = attr["Avg_Estimate_Total"] / 16;
+          // delay.process(clap, 0.12, 0.8, Avg_Estimate_Total);
+          // delay.process(snare, 0.1, 0.6, Avg_Estimate_Total);
+          // delay.process(bass, 0.1, 0.6, Avg_Estimate_Total);
+          const total = Avg_Estimate_Total / STEPS;
           const [_, ...names] = fieldNames;
           const totalStdDev = names.reduce((a, b) => a + attr[`StdDev_${b}`], 0);
-          const avgStdDev = totalStdDev / 16;
+          const avgStdDev = totalStdDev / STEPS;
           avgPattern = names.map(field => attr[`Avg_${field}`] > total ? 1 : 0);
           stdDevPattern = names.map(field => attr[`StdDev_${field}`] > avgStdDev ? 1 : 0);
           avgShiftedPattern = [];
           // xor of both avg and stddev
-          for (let i = 0; i < 16; i++) {
+          for (let i = 0; i < STEPS; i++) {
             const a = avgPattern[i];
             const b = stdDevPattern[i];
             let c = 0;
@@ -418,7 +419,7 @@ function setup() {
         const params = {
           layer: layerView.layer,
           field: "Estimate_Total",
-          numBins: 16
+          numBins: STEPS
         };
         layerView.queryFeatures(query).then(({ features }) => {
           if (features.length) {
