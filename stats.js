@@ -430,7 +430,7 @@ function setup() {
             stdDevIncomeText.innerText = avgStdDev.toFixed(1);
           });
   
-          // Test histogram stuff
+          // histogram stuff
           let average = null;
           const params = {
             layer: layerView.layer,
