@@ -24,7 +24,7 @@ let stdDevPattern = [];
 
 const WIDTH = 300;
 const HEIGHT = 100;
-const STEPS = 16;
+const STEPS = 9;
 
 let beat = 1;
 
@@ -85,10 +85,10 @@ function setup() {
     snare = loadSound('assets/snare_ups_sample.mp3', () => {});
 
   
-    hPat = [0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1];
-    cPat = [0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0];
-    bPat = [0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1];
-    sPat = [0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0];
+    hPat = [0, 1, 0, 1, 0, 1, 0, 1, 0, 1];
+    cPat = [0, 0, 0, 1, 0, 0, 0, 0, 0, 0];
+    bPat = [0, 0, 0, 1, 0, 0, 0, 1, 0, 0];
+    sPat = [0, 1, 0, 0, 0, 1, 0, 0, 1, 0];
 
     drawPattern({
       elements: hhElements,
@@ -226,285 +226,289 @@ function setup() {
 
     const webmap = new WebMap({
       portalItem: {
-        id: "d5dda743788a4b0688fe48f43ae7beb9"
+        id: "5b353dd100b5497e9274b42d78f9ff55"
       }
     });
 
-    var view = new MapView({
-      map: webmap,
-      container: "viewDiv",
-      zoom: 8,
-      center: [-74.0060, 40.7128]
-    });
-
-    // widgets
-    const legendExpand = new Expand({
-      content: new Legend({ view })
-    });
-    const histogramWidget = new HistogramRangeSlider({
-      container: "slider-container",
-      excludedBarColor: "#524e4e",
-      rangeType: "between",
-    });
-
-    view.ui.add(btn, "top-left");
-    view.ui.add(legendExpand, "top-left");
-    view.ui.add(canvasSpectrum, "bottom-right");
-    view.ui.add("audioList", "top-left");
-    view.ui.add("infoDiv", "top-right");
-    view.ui.add(histogramElement, "bottom-left");
-
-    histogramWidget.on(["value-change", "values-change"], (event) =>{
-      const [min, max] = histogramWidget.values;
-      const pct = (max - min)/max;
-      if (hhDelay.checked) {
-        delay.process(hh, 0.12, pct, max - min);
-      }
-      if (cDelay.checked) {
-        delay.process(clap, 0.12, pct, max - min);
-      }
-      if (sDelay.checked) {
-        delay.process(snare, 0.12, pct, max - min);
-      }
-      if (bDelay.checked) {
-        delay.process(bass, 0.12, pct, max - min);
-      }
-    });
-
-    // fields of interest
-    const fieldNames = [
-      "Estimate_Total",
-      "Estimate_Total_10000to14999",
-      "Estimate_Total_15000to19999",
-      "Estimate_Total_20000to24999",
-      "Estimate_Total_25000to29999",
-      "Estimate_Total_30000to34999",
-      "Estimate_Total_35000to39999",
-      "Estimate_Total_40000to44999",
-      "Estimate_Total_45000to49999",
-      "Estimate_Total_50000to59999",
-      "Estimate_Total_60000to74999",
-      "Estimate_Total_75000to99999",
-      "Estimate_Total_100000to124999",
-      "Estimate_Total_125000to149999",
-      "Estimate_Total_150000to199999",
-      "Estimate_Total_200000ormore",
-      "Estimate_Total_Lessthan10000"
-    ];
-    // stats types: count | sum | min | max | avg | stddev | var
-
-    // set up layers and layer views
-    view.when(() => {
+    webmap.load().then(() => {
       const layer = webmap.layers.getItemAt(0);
-      return view.whenLayerView(layer);
-    })
-    .then((lyrView) => {
-      layerView = lyrView;
-      return watchUtils.whenFalseOnce(layerView, "updating");
-    })
-    .then(() => {
-      view.on(["click", "drag"], (event)=> {
-        // disables navigation by pointer drag
-        event.stopPropagation();
-        // stats queries
-        const query = layerView.layer.createQuery();
-        query.geometry = view.toMap(event); // converts the screen point to a map point
-        query.distance = 5; // queries all features within 5 miles of the point
-        query.units = "miles";
+      layer.outFields = [
+        "AGGINC_CY",
+        "HINCBASECY",
+        "TOTHU_CY"
+      ];
+      return layer;
+    }).then(() => {
 
-        // Prepare Query
-
-        // pattern calc
-        const patternQuery = query.clone();
-
-        // -----------------------------
-        // Statistics
-        // -----------------------------
-
-        // get an average of values
-        const avgStats = fieldNames.map(field => ({
-          onStatisticField: field,
-          outStatisticFieldName: `Avg_${field}`,
-          statisticType: "avg"
-        }));
-        // to get an average of the variances
-        const varStats = fieldNames.map(field => ({
-          onStatisticField: field,
-          outStatisticFieldName: `Var_${field}`,
-          statisticType: "var"
-        }));
-        // to get an above or below
-        const stddevStats = fieldNames.map(field => ({
-          onStatisticField: field,
-          outStatisticFieldName: `StdDev_${field}`,
-          statisticType: "stddev"
-        }));
-        patternQuery.outStatistics = [
-          ...avgStats,
-          ...varStats,
-          ...stddevStats,
-          // to get the total count
-          {
-            onStatisticField: "Estimate_Total",
-            outStatisticFieldName: "Count_Est_Total",
-            statisticType: "count"
-          }
-        ];
-        layerView.queryFeatures(patternQuery).then(({ features }) => {
-          if (!features.length) {
-            return;
-          }
-          const attr = features[0].attributes;
-          const {
-            Avg_Estimate_Total,
-            Count_Est_Total,
-          } = attr;
-          if (!Count_Est_Total) return;
-          drums.setBPM(Count_Est_Total);
-          // delay.process(hh, 0.5, 0.3, Avg_Estimate_Total);
-          // delay.process(clap, 0.12, 0.8, Avg_Estimate_Total);
-          // delay.process(snare, 0.1, 0.6, Avg_Estimate_Total);
-          // delay.process(bass, 0.1, 0.6, Avg_Estimate_Total);
-          const total = Avg_Estimate_Total / STEPS;
-          const [_, ...names] = fieldNames;
-          const totalStdDev = names.reduce((a, b) => a + attr[`StdDev_${b}`], 0);
-          const avgStdDev = totalStdDev / STEPS;
-          avgPattern = names.map(field => attr[`Avg_${field}`] > total ? 1 : 0);
-          stdDevPattern = names.map(field => attr[`StdDev_${field}`] > avgStdDev ? 1 : 0);
-          avgShiftedPattern = [];
-          // xor of both avg and stddev
-          for (let i = 0; i < STEPS; i++) {
-            const a = avgPattern[i];
-            const b = stdDevPattern[i];
-            let c = 0;
-            // fill the gaps
-            if (a === 0 && b === 0) {
-              c = 1;
+      const view = new MapView({
+        map: webmap,
+        container: "viewDiv",
+        // zoom: 8,
+        // center: [-74.0060, 40.7128]
+      });
+  
+      // widgets
+      const legendExpand = new Expand({
+        content: new Legend({ view })
+      });
+      const histogramWidget = new HistogramRangeSlider({
+        container: "slider-container",
+        excludedBarColor: "#524e4e",
+        rangeType: "between",
+      });
+  
+      view.ui.add(btn, "top-left");
+      view.ui.add(legendExpand, "top-left");
+      view.ui.add(canvasSpectrum, "bottom-right");
+      view.ui.add("audioList", "top-left");
+      view.ui.add("infoDiv", "top-right");
+      view.ui.add(histogramElement, "bottom-left");
+  
+      histogramWidget.on(["value-change", "values-change"], (event) =>{
+        const [min, max] = histogramWidget.values;
+        const pct = (max - min)/max;
+        if (hhDelay.checked) {
+          delay.process(hh, 0.12, pct, max - min);
+        }
+        if (cDelay.checked) {
+          delay.process(clap, 0.12, pct, max - min);
+        }
+        if (sDelay.checked) {
+          delay.process(snare, 0.12, pct, max - min);
+        }
+        if (bDelay.checked) {
+          delay.process(bass, 0.12, pct, max - min);
+        }
+      });
+  
+      // fields of interest
+      const fieldNames = [
+        "HINCBASECY",
+        "HINC0_CY",
+        "HINC15_CY",
+        "HINC25_CY",
+        "HINC35_CY",
+        "HINC50_CY",
+        "HINC75_CY",
+        "HINC100_CY",
+        "HINC150_CY",
+        "HINC200_CY"
+      ];
+      // stats types: count | sum | min | max | avg | stddev | var
+  
+      // set up layers and layer views
+      view.when(() => {
+        const layer = webmap.layers.getItemAt(0);
+        return view.whenLayerView(layer);
+      })
+      .then((lyrView) => {
+        layerView = lyrView;
+        return watchUtils.whenFalseOnce(layerView, "updating");
+      })
+      .then(() => {
+        view.on(["click", "drag"], (event)=> {
+          // disables navigation by pointer drag
+          event.stopPropagation();
+          // stats queries
+          const query = layerView.layer.createQuery();
+          query.geometry = view.toMap(event); // converts the screen point to a map point
+          query.distance = 5; // queries all features within 5 miles of the point
+          query.units = "kilometers";
+  
+          // Prepare Query
+  
+          // pattern calc
+          const patternQuery = query.clone();
+  
+          // -----------------------------
+          // Statistics
+          // -----------------------------
+  
+          // get an average of values
+          const avgStats = fieldNames.map(field => ({
+            onStatisticField: field,
+            outStatisticFieldName: `Avg_${field}`,
+            statisticType: "avg"
+          }));
+          // to get an average of the variances
+          const varStats = fieldNames.map(field => ({
+            onStatisticField: field,
+            outStatisticFieldName: `Var_${field}`,
+            statisticType: "var"
+          }));
+          // to get an above or below
+          const stddevStats = fieldNames.map(field => ({
+            onStatisticField: field,
+            outStatisticFieldName: `StdDev_${field}`,
+            statisticType: "stddev"
+          }));
+          patternQuery.outStatistics = [
+            ...avgStats,
+            ...varStats,
+            ...stddevStats,
+            // to get the total count
+            {
+              onStatisticField: "HINCBASECY",
+              outStatisticFieldName: "Count_Est_Total",
+              statisticType: "count"
             }
-            avgShiftedPattern.push(c);
-          }
-
-          // avgShiftedPattern = avgPattern.map(a => a ^= 1);
-
-          // hh pattern
-          if (hPatInput.checked) {
-            hPhrase.sequence = avgPattern;
-            drawPattern({
-              elements: hhElements,
-              pattern: avgPattern
-            });
-          }
-          // snare pattern
-          if (sPatInput.checked) {
-            sPhrase.sequence = stdDevPattern;
-            drawPattern({
-              elements: snareElements,
-              pattern: stdDevPattern
-            });
-          }
-          // clap pattern
-          if (cPatInput.checked) {
-            cPhrase.sequence = avgShiftedPattern;
-            drawPattern({
-              elements: clapElements,
-              pattern: avgShiftedPattern
-            });
-          }
-
-          infoCount.innerText = Count_Est_Total;
-        });
-
-        // Test histogram stuff
-        let average = null;
-        const params = {
-          layer: layerView.layer,
-          field: "Estimate_Total",
-          numBins: STEPS
-        };
-        layerView.queryFeatures(query).then(({ features }) => {
-          if (features.length) {
-            params.features = features;
-            return getAverage(params);
-          }
-        })
-        .then(avg => {
-          average = avg;
-          return histogram(params);
-        })
-        .then((histogramResult) => {
-          if (!histogramResult) return;
-          const { bins, minValue, maxValue } = histogramResult;
-          histogramWidget.set({
-            average,
-            bins,
-            min: minValue,
-            max: maxValue,
-            values: [ minValue, maxValue ]
+          ];
+          layerView.queryFeatures(patternQuery).then(({ features }) => {
+            if (!features.length) {
+              return;
+            }
+            const attr = features[0].attributes;
+            const {
+              Avg_HINCBASECY,
+              Count_Est_Total,
+            } = attr;
+            if (!Count_Est_Total) return;
+            drums.setBPM(Count_Est_Total);
+            // delay.process(hh, 0.5, 0.3, Avg_Estimate_Total);
+            // delay.process(clap, 0.12, 0.8, Avg_Estimate_Total);
+            // delay.process(snare, 0.1, 0.6, Avg_Estimate_Total);
+            // delay.process(bass, 0.1, 0.6, Avg_Estimate_Total);
+            const total = Avg_HINCBASECY / STEPS;
+            const [_, ...names] = fieldNames;
+            const totalStdDev = names.reduce((a, b) => a + attr[`StdDev_${b}`], 0);
+            const avgStdDev = totalStdDev / STEPS;
+            avgPattern = names.map(field => attr[`Avg_${field}`] > total ? 1 : 0);
+            stdDevPattern = names.map(field => attr[`StdDev_${field}`] > avgStdDev ? 1 : 0);
+            avgShiftedPattern = [];
+            // xor of both avg and stddev
+            for (let i = 0; i < STEPS; i++) {
+              const a = avgPattern[i];
+              const b = stdDevPattern[i];
+              let c = 0;
+              // fill the gaps
+              if (a === 0 && b === 0) {
+                c = 1;
+              }
+              avgShiftedPattern.push(c);
+            }
+  
+            // avgShiftedPattern = avgPattern.map(a => a ^= 1);
+  
+            // hh pattern
+            if (hPatInput.checked) {
+              hPhrase.sequence = avgPattern;
+              drawPattern({
+                elements: hhElements,
+                pattern: avgPattern
+              });
+            }
+            // snare pattern
+            if (sPatInput.checked) {
+              sPhrase.sequence = stdDevPattern;
+              drawPattern({
+                elements: snareElements,
+                pattern: stdDevPattern
+              });
+            }
+            // clap pattern
+            if (cPatInput.checked) {
+              cPhrase.sequence = avgShiftedPattern;
+              drawPattern({
+                elements: clapElements,
+                pattern: avgShiftedPattern
+              });
+            }
+  
+            infoCount.innerText = Count_Est_Total;
           });
-          const avgCount = bins.reduce((a, b) => a + b.count, 0) / bins.length;
-          const bassPattern = bins.map(x => x.count > avgCount ? 1 : 0);
-          bPhrase.sequence = bassPattern;
-          if (bPatInput.checked) {
-            drawPattern({
-              elements: bassElements,
-              pattern: bassPattern
+  
+          // Test histogram stuff
+          let average = null;
+          const params = {
+            layer: layerView.layer,
+            field: "AGGINC_CY",
+            numBins: STEPS
+          };
+          layerView.queryFeatures(query).then(({ features }) => {
+            if (features.length) {
+              params.features = features;
+              return getAverage(params);
+            }
+          })
+          .then(avg => {
+            average = avg;
+            return histogram(params);
+          })
+          .then((histogramResult) => {
+            if (!histogramResult) return;
+            const { bins, minValue, maxValue } = histogramResult;
+            histogramWidget.set({
+              average,
+              bins,
+              min: minValue,
+              max: maxValue,
+              values: [ minValue, maxValue ]
             });
-          }
-        })
-        .catch(error => console.warn(error));
-
-        layerView.queryObjectIds(query).then(oids => {
-          if (!oids.length) {
-            // reset layerView effect
-            layerView.effect = null;
-            return;
-          }
-
-          layerView.effect = {
-            filter: {
-              where: `OBJECTID in (${ oids.join(',') })`
-            },
-            excludedEffect: "grayscale(100%) opacity(30%)"
-          }
+            const avgCount = bins.reduce((a, b) => a + b.count, 0) / bins.length;
+            const bassPattern = bins.map(x => x.count > avgCount ? 1 : 0);
+            bPhrase.sequence = bassPattern;
+            if (bPatInput.checked) {
+              drawPattern({
+                elements: bassElements,
+                pattern: bassPattern
+              });
+            }
+          })
+          .catch(error => console.warn(error));
+  
+          layerView.queryObjectIds(query).then(oids => {
+            if (!oids.length) {
+              // reset layerView effect
+              layerView.effect = null;
+              return;
+            }
+  
+            layerView.effect = {
+              filter: {
+                where: `OBJECTID in (${ oids.join(',') })`
+              },
+              excludedEffect: "grayscale(100%) opacity(30%)"
+            }
+          });
         });
       });
-    });
-
-    btn.addEventListener("click", () => {
-      if (hh.isLoaded() && clap.isLoaded() && bass.isLoaded()) {
-        if (!drums.isPlaying) {
-          console.log("start music");
-          img.src = "assets/speaker_mute_Icon.svg";
-          drums.loop();
-        } else {
-          console.log("stop music");
-          img.src = "assets/speaker_Icon.svg";
-          drums.stop();
+  
+      btn.addEventListener("click", () => {
+        if (hh.isLoaded() && clap.isLoaded() && bass.isLoaded()) {
+          if (!drums.isPlaying) {
+            console.log("start music");
+            img.src = "assets/speaker_mute_Icon.svg";
+            drums.loop();
+          } else {
+            console.log("stop music");
+            img.src = "assets/speaker_Icon.svg";
+            drums.stop();
+          }
+        }
+      });
+  
+      function getAverage(params) {
+        return summaryStatistics(params).then(({ avg }) => avg);
+      }
+  
+      function draw() {
+        let dataArray = fft.analyze();
+        drawVisual = requestAnimationFrame(draw);
+        canvasCtx.fillStyle = 'rgb(255, 255, 255)';
+        canvasCtx.fillRect(0, 0, WIDTH, HEIGHT);
+        const barWidth = (WIDTH / 1024) * 2.5;
+        let barHeight;
+        var x = 0;
+        for(var i = 0; i < 1024; i++) {
+          barHeight = dataArray[i]/2;
+          canvasCtx.fillStyle = 'rgb(' + (barHeight+100) + ',50,50)';
+          canvasCtx.fillRect(x,HEIGHT-barHeight/2,barWidth,barHeight);
+          x += barWidth + 1;
         }
       }
+  
+      draw();
     });
-
-    function getAverage(params) {
-      return summaryStatistics(params).then(({ avg }) => avg);
-    }
-
-    function draw() {
-      let dataArray = fft.analyze();
-      drawVisual = requestAnimationFrame(draw);
-      canvasCtx.fillStyle = 'rgb(255, 255, 255)';
-      canvasCtx.fillRect(0, 0, WIDTH, HEIGHT);
-      const barWidth = (WIDTH / 1024) * 2.5;
-      let barHeight;
-      var x = 0;
-      for(var i = 0; i < 1024; i++) {
-        barHeight = dataArray[i]/2;
-        canvasCtx.fillStyle = 'rgb(' + (barHeight+100) + ',50,50)';
-        canvasCtx.fillRect(x,HEIGHT-barHeight/2,barWidth,barHeight);
-        x += barWidth + 1;
-      }
-    }
-
-    draw();
   });
 }
 
