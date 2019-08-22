@@ -58,10 +58,10 @@
       <div id="infoDiv" class="esri-widget">
         <div><b>Household Income</b></div>
         <section class="info">
-          <label>Number of Aggregated Households: <span id="infoCount">0</span> <em>(drives BPM)</em></label>
+          <label>Aggregated Households: <span id="infoCount">0</span> <em>(drives BPM)</em></label>
         </section>
         <hr />
-        <label><input id="hhPattern" type="checkbox" checked/> Hi-Hat <em>(driven by avg income)</em></label>
+        <label><input id="hhPattern" type="checkbox" checked/> Hi-Hat <em>(avg number of households)</em> <span id="avgIncome">0</span></label>
         <section class="patterns">
           <div class="hhP"></div>
           <div class="hhP"></div>
@@ -73,7 +73,7 @@
           <div class="hhP"></div>
           <div class="hhP"></div>
         </section>
-        <label><input id="cPattern" type="checkbox" checked/> Clap <em>(fill in the gaps)</em></label>
+        <label><input id="cPattern" type="checkbox"/> Clap <em>(fill in the gaps)</em></label>
         <section class="patterns">
           <div class="clapP"></div>
           <div class="clapP"></div>
@@ -85,7 +85,7 @@
           <div class="clapP"></div>
           <div class="clapP"></div>
         </section>
-        <label><input id="sPattern" type="checkbox" checked/> Snare <em>(driven by std dev of income)</em></label>
+        <label><input id="sPattern" type="checkbox"/> Snare <em>(std dev of households)</em> <span id="stdDevIncome">0</span></label>
         <section class="patterns">
           <div class="snareP"></div>
           <div class="snareP"></div>
@@ -97,7 +97,7 @@
           <div class="snareP"></div>
           <div class="snareP"></div>
         </section>
-        <label><input id="bPattern" type="checkbox" checked/> Bass <em>(driven by avg histogram count)</em></label>
+        <label><input id="bPattern" type="checkbox"/> Bass <em>(avg histogram count)</em> <span id="avgBinCount">0</span></label>
         <section class="patterns">
           <div class="bassP"></div>
           <div class="bassP"></div>
@@ -111,7 +111,7 @@
         </section>
       </div>
       <div id="histogram" class="esri-component esri-widget">
-          <div><b>Total Household Income</b> <em>(drives bass sequence)</em></div>
+          <div><b>Total Household Income</b> <em>(drives bass sequence)</em> <span id="totalAggIncome">0</span></div>
         <div id="slider-container"></div>
         <section>
           <div>

@@ -46,6 +46,12 @@ const cDelay = document.getElementById("clapDelay");
 const sDelay = document.getElementById("snareDelay");
 const bDelay = document.getElementById("bassDelay");
 
+// number formatter
+const formatter = new Intl.NumberFormat('en-US', {
+  style: 'currency',
+  currency: 'USD',
+})
+
 // -----------------------------
 // setup() is used by p5
 // -----------------------------
@@ -84,11 +90,10 @@ function setup() {
     bass = loadSound('assets/bass_sample.mp3', () => {});
     snare = loadSound('assets/snare_ups_sample.mp3', () => {});
 
-  
     hPat = [0, 1, 0, 1, 0, 1, 0, 1, 0, 1];
-    cPat = [0, 0, 0, 1, 0, 0, 0, 0, 0, 0];
-    bPat = [0, 0, 0, 1, 0, 0, 0, 1, 0, 0];
-    sPat = [0, 1, 0, 0, 0, 1, 0, 0, 1, 0];
+    cPat = [0, 0, 0, 1, 0, 0, 1, 0, 1, 0];
+    bPat = [0, 1, 0, 1, 0, 1, 0, 1, 0, 0];
+    sPat = [0, 0, 1, 0, 0, 1, 0, 0, 1, 0];
 
     drawPattern({
       elements: hhElements,
@@ -194,6 +199,10 @@ function setup() {
     const canvasCtx = canvasSpectrum.getContext("2d");
     const infoCount = document.getElementById("infoCount");
     const histogramElement = document.getElementById("histogram");
+    const avgIncomeText = document.getElementById("avgIncome");
+    const stdDevIncomeText = document.getElementById("stdDevIncome");
+    const totalAggIncomeText = document.getElementById("totalAggIncome");
+    const avgBinCountText = document.getElementById("avgBinCount");
 
     // update patterns on check
     hPatInput.addEventListener("change", () => {
@@ -233,8 +242,9 @@ function setup() {
     webmap.load().then(() => {
       const layer = webmap.layers.getItemAt(0);
       layer.outFields = [
-        "AGGINC_CY",
         "HINCBASECY",
+        "AGGHINC_CY",
+        "AVGHINC_CY",
         "TOTHU_CY"
       ];
       return layer;
@@ -263,6 +273,10 @@ function setup() {
       view.ui.add("audioList", "top-left");
       view.ui.add("infoDiv", "top-right");
       view.ui.add(histogramElement, "bottom-left");
+
+      histogramWidget.labelFormatFunction = (value, type) => {
+        return (type === "value") ? `$${value.toFixed(0)}` : value;
+      }
   
       histogramWidget.on(["value-change", "values-change"], (event) =>{
         const [min, max] = histogramWidget.values;
@@ -283,7 +297,7 @@ function setup() {
   
       // fields of interest
       const fieldNames = [
-        "HINCBASECY",
+        "AGGHINC_CY",
         "HINC0_CY",
         "HINC15_CY",
         "HINC25_CY",
@@ -359,23 +373,20 @@ function setup() {
             }
             const attr = features[0].attributes;
             const {
-              Avg_HINCBASECY,
               Count_Est_Total,
             } = attr;
             if (!Count_Est_Total) return;
             drums.setBPM(Count_Est_Total);
-            // delay.process(hh, 0.5, 0.3, Avg_Estimate_Total);
-            // delay.process(clap, 0.12, 0.8, Avg_Estimate_Total);
-            // delay.process(snare, 0.1, 0.6, Avg_Estimate_Total);
-            // delay.process(bass, 0.1, 0.6, Avg_Estimate_Total);
-            const total = Avg_HINCBASECY / STEPS;
             const [_, ...names] = fieldNames;
+            // std dev of houeholds
             const totalStdDev = names.reduce((a, b) => a + attr[`StdDev_${b}`], 0);
             const avgStdDev = totalStdDev / STEPS;
-            avgPattern = names.map(field => attr[`Avg_${field}`] > total ? 1 : 0);
+            // avg number of households
+            const avgHH = names.reduce((a, b) => a + attr[`Avg_${b}`], 0) / STEPS
+            avgPattern = names.map(field => attr[`Avg_${field}`] > avgHH ? 1 : 0);
             stdDevPattern = names.map(field => attr[`StdDev_${field}`] > avgStdDev ? 1 : 0);
             avgShiftedPattern = [];
-            // xor of both avg and stddev
+            // fill the gaps from avg and std dev
             for (let i = 0; i < STEPS; i++) {
               const a = avgPattern[i];
               const b = stdDevPattern[i];
@@ -415,13 +426,15 @@ function setup() {
             }
   
             infoCount.innerText = Count_Est_Total;
+            avgIncomeText.innerText = avgHH.toFixed(1);
+            stdDevIncomeText.innerText = avgStdDev.toFixed(1);
           });
   
           // Test histogram stuff
           let average = null;
           const params = {
             layer: layerView.layer,
-            field: "AGGINC_CY",
+            field: "AGGHINC_CY",
             numBins: STEPS
           };
           layerView.queryFeatures(query).then(({ features }) => {
@@ -437,6 +450,7 @@ function setup() {
           .then((histogramResult) => {
             if (!histogramResult) return;
             const { bins, minValue, maxValue } = histogramResult;
+            totalAggIncomeText.innerText = formatter.format(maxValue);
             histogramWidget.set({
               average,
               bins,
@@ -446,6 +460,7 @@ function setup() {
             });
             const avgCount = bins.reduce((a, b) => a + b.count, 0) / bins.length;
             const bassPattern = bins.map(x => x.count > avgCount ? 1 : 0);
+            avgBinCountText.innerText = avgCount.toFixed(1);
             bPhrase.sequence = bassPattern;
             if (bPatInput.checked) {
               drawPattern({
