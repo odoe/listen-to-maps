@@ -2,6 +2,8 @@
 
 This repo contains demos and the [PowerPoint](https://odoe.github.io/listen-to-maps/ListeningToMaps2019.pptx) that was prepared for [HalfStack NY, 2019](https://halfstackconf.com/newyork/).
 
+* [Google Slides](https://docs.google.com/presentation/d/1hNbuGTNiiLz1pQ5l5Ptg9ubYwGAgLuc96gJKq5JqDZU/edit?usp=sharing)
+
 ## Demos
 
 ## [Earthquake Map](https://odoe.github.io/listen-to-maps/time.html) 🌎
