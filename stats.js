@@ -272,7 +272,9 @@ function setup() {
       view.ui.add(canvasSpectrum, "bottom-right");
       view.ui.add("audioList", "top-left");
       view.ui.add("infoDiv", "top-right");
-      view.ui.add(histogramElement, "bottom-left");
+      view.ui.add(new Expand({
+        content: histogramElement
+      }), "bottom-left");
 
       histogramWidget.labelFormatFunction = (value, type) => {
         return (type === "value") ? `$${value.toFixed(0)}` : value;
