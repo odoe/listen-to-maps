@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Household Income</title>
+  <link rel="stylesheet" href="https://js.arcgis.com/4.14/esri/themes/light/main.css">
+  <link rel="stylesheet" href="index.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.9.0/p5.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.9.0/addons/p5.dom.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.9.0/addons/p5.sound.min.js"></script>
+  <script>
+    var locationPath = location.pathname.replace(/\/[^\/]+$/, "");
+    window.dojoConfig = {
+      packages: [
+        {
+          name: "app",
+          location: locationPath + "."
+        }
+      ],
+      deps: ['app/index']
+    };
+  </script>
+  <script src="https://js.arcgis.com/4.14/"></script>
+</head>
+<body>
+  <noscript> JavaScript is required in order to use this app </noscript>
+  <div id="viewDiv">
+    <ul id="audioList" class="layer-items esri-component esri-widget">
+      <li>
+        <label>
+          <input id="hh" type="checkbox" checked/>
+          Hi-Hat
+        </label>
+      </li>
+      <li>
+        <label>
+          <input id="clap" type="checkbox" checked/>
+          Clap
+        </label>
+      </li>
+      <li>
+        <label>
+          <input id="bass" type="checkbox" checked/>
+          Bass
+        </label>
+      </li>
+      <li>
+        <label>
+          <input id="snare" type="checkbox" checked/>
+          Snare
+        </label>
+      </li>
+    </ul>
+    <div id="btn" class="esri-component esri-widget">
+      <div
+        class="esri-widget--button esri-widget esri-interactive"
+        role="button"
+        tabindex="0"
+        title="Audio"
+      >
+      <span
+        aria-hidden="true"
+        role="presentation">
+        <img id="audioIcon" class="audio-icon" width="16px" height="16px" src="assets/speaker_Icon.svg" alt="Audio">
+      </span>
+      </div>
+    </div>
+    <div id="infoDiv" class="esri-widget">
+      <div><b>Household Income</b></div>
+      <section class="info">
+        <label>Aggregated Households: <span id="infoCount">0</span> <em>(drives BPM)</em></label>
+      </section>
+      <hr />
+      <label><input id="hhPattern" type="checkbox" checked/> Hi-Hat <em>(avg number of households)</em> <span id="avgIncome">0</span></label>
+      <section class="patterns">
+        <div class="hhP"></div>
+        <div class="hhP"></div>
+        <div class="hhP"></div>
+        <div class="hhP"></div>
+        <div class="hhP"></div>
+        <div class="hhP"></div>
+        <div class="hhP"></div>
+        <div class="hhP"></div>
+        <div class="hhP"></div>
+      </section>
+      <label><input id="cPattern" type="checkbox"/> Clap <em>(fill in the gaps)</em></label>
+      <section class="patterns">
+        <div class="clapP"></div>
+        <div class="clapP"></div>
+        <div class="clapP"></div>
+        <div class="clapP"></div>
+        <div class="clapP"></div>
+        <div class="clapP"></div>
+        <div class="clapP"></div>
+        <div class="clapP"></div>
+        <div class="clapP"></div>
+      </section>
+      <label><input id="sPattern" type="checkbox"/> Snare <em>(std dev of households)</em> <span id="stdDevIncome">0</span></label>
+      <section class="patterns">
+        <div class="snareP"></div>
+        <div class="snareP"></div>
+        <div class="snareP"></div>
+        <div class="snareP"></div>
+        <div class="snareP"></div>
+        <div class="snareP"></div>
+        <div class="snareP"></div>
+        <div class="snareP"></div>
+        <div class="snareP"></div>
+      </section>
+      <label><input id="bPattern" type="checkbox"/> Bass <em>(avg histogram count)</em> <span id="avgBinCount">0</span></label>
+      <section class="patterns">
+        <div class="bassP"></div>
+        <div class="bassP"></div>
+        <div class="bassP"></div>
+        <div class="bassP"></div>
+        <div class="bassP"></div>
+        <div class="bassP"></div>
+        <div class="bassP"></div>
+        <div class="bassP"></div>
+        <div class="bassP"></div>
+      </section>
+    </div>
+    <div id="histogram" class="esri-component esri-widget">
+        <div><b>Total Household Income</b> <em>(drives bass sequence)</em> <span id="totalAggIncome">0</span></div>
+      <div id="slider-container"></div>
+      <section>
+        <div>
+            <div><em>apply to delay</em></div>
+        </div>
+        <label>
+          <input id="hhDelay" type="checkbox"/>
+          Hi-Hat
+        </label>
+        <label>
+          <input id="snareDelay" type="checkbox"/>
+          Snare
+        </label>
+        <label>
+          <input id="clapDelay" type="checkbox">
+          Clap
+        </label>
+        <label>
+          <input id="bassDelay" type="checkbox">
+          Bass
+        </label>
+      </section>
+    </div>
+    <canvas id="spectrum" width="300px" height="100px"></canvas>
+  </div>
+</body>
+</html>
+

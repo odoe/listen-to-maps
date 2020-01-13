@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Earthquake Rumble</title>
+  <link rel="stylesheet" href="https://js.arcgis.com/4.14/esri/themes/light/main.css">
+  <link rel="stylesheet" href="index.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.9.0/p5.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.9.0/addons/p5.dom.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.9.0/addons/p5.sound.min.js"></script>
+  <script>
+    var locationPath = location.pathname.replace(/\/[^\/]+$/, "");
+    window.dojoConfig = {
+      packages: [
+        {
+          name: "app",
+          location: locationPath + "."
+        }
+      ],
+      deps: ['app/index']
+    };
+  </script>
+  <script src="https://js.arcgis.com/4.14/"></script>
+</head>
+<body>
+  <noscript> JavaScript is required in order to use this app </noscript>
+  <div id="viewDiv">
+    <ul id="audioList" class="layer-items esri-component esri-widget">
+      <li>
+        <label>
+          <input id="hh" type="checkbox" checked/>
+          High Hat
+        </label>
+      </li>
+      <li>
+        <label>
+          <input id="clap" type="checkbox" checked/>
+          Clap
+        </label>
+      </li>
+      <li>
+        <label>
+          <input id="bass" type="checkbox" checked/>
+          Bass
+        </label>
+      </li>
+      <li>
+        <label>
+          <input id="snare" type="checkbox" checked/>
+          Snare
+        </label>
+      </li>
+    </ul>
+    <div id="btn" class="esri-component esri-widget">
+      <div
+        class="esri-widget--button esri-widget esri-interactive"
+        role="button"
+        tabindex="0"
+        title="Audio"
+      >
+        <span
+          aria-hidden="true"
+          role="presentation">
+        <img id="audioIcon" class="audio-icon" width="16px" height="16px" src="assets/speaker_Icon.svg" alt="Audio">
+        </span>
+      </div>
+    </div>
+    <div id="timeSlider"></div>
+    <div id="infoDiv" class="esri-widget">
+      <div><b>USGS Earthquakes</b></div>
+      <br />
+      <div id="statsDiv" class="esri-widget"></div>
+    </div>
+  </div>
+</body>
+</html>
+
