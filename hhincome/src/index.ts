@@ -12,6 +12,7 @@ import Expand from 'esri/widgets/Expand';
 import Legend from 'esri/widgets/Legend';
 
 // utils
+import { debounce } from 'esri/core/promiseUtils';
 import watchUtils from 'esri/core/watchUtils';
 import histogram from 'esri/renderers/smartMapping/statistics/histogram';
 import summaryStatistics from 'esri/renderers/smartMapping/statistics/summaryStatistics';
@@ -126,7 +127,7 @@ window['setup'] = function setup() {
     cPat
   );
 
-  let count = 0;
+  // const count = 0;
   const bPhrase = new p5.Phrase(
     'bass',
     (time: number) => {
@@ -135,23 +136,23 @@ window['setup'] = function setup() {
       }
       env.play();
       bass.play(time);
-      if (layerView && layerView.effect) {
-        const effect = layerView.effect.clone();
-        if (timeSlider) {
-          // && timeSlider.viewModel.state === 'playing'
-          effect.includedEffect = 'contrast(500%)';
-        } else {
-          if (count === 0) {
-            effect.includedEffect = 'contrast(500%)';
-            count = 1;
-          } else {
-            effect.includedEffect = null as any;
-            count = 0;
-          }
-        }
+      // if (layerView && layerView.effect) {
+      //   const effect = layerView.effect.clone();
+      //   if (timeSlider) {
+      //     // && timeSlider.viewModel.state === 'playing'
+      //     effect.includedEffect = 'contrast(500%)';
+      //   } else {
+      //     if (count === 0) {
+      //       effect.includedEffect = 'contrast(500%)';
+      //       count = 1;
+      //     } else {
+      //       effect.includedEffect = null as any;
+      //       count = 0;
+      //     }
+      //   }
 
-        layerView.effect = effect;
-      }
+      //   layerView.effect = effect;
+      // }
     },
     bPat
   );
@@ -248,11 +249,29 @@ window['setup'] = function setup() {
     }
   });
 
+  const highlightMap = debounce((query: __esri.Query) => {
+    return layerView.queryObjectIds(query).then(oids => {
+      if (!oids.length) {
+        // reset layerView effect
+        layerView.effect = null as any;
+        return;
+      }
+
+      layerView.effect = {
+        filter: {
+          where: `OBJECTID in (${oids.join(',')})`
+        },
+        excludedEffect: 'grayscale(100%) opacity(30%)'
+      } as any;
+      return query;
+    });
+  });
+
   webmap
     .load()
     .then(() => {
       const layer = webmap.layers.getItemAt(0) as __esri.FeatureLayer;
-      layer.outFields = ['HINCBASECY', 'AGGHINC_CY', 'AVGHINC_CY', 'TOTHU_CY'];
+      layer.outFields = ['HINCBASECY', 'AGGHINC_CY', 'AVGHINC_CY', 'TOTHH_CY', 'MEDHINC_CY'];
       return layer;
     })
     .then(() => {
@@ -343,7 +362,9 @@ window['setup'] = function setup() {
 
       // fields of interest
       const fieldNames = [
-        'AGGHINC_CY',
+        // 'AGGHINC_CY',
+        'MEDHINC_CY', // Median HH Income
+
         'HINC0_CY',
         'HINC15_CY',
         'HINC25_CY',
@@ -357,6 +378,7 @@ window['setup'] = function setup() {
       // stats types: count | sum | min | max | avg | stddev | var
 
       // set up layers and layer views
+      let query: __esri.Query;
       view
         .when(() => {
           const layer = webmap.layers.getItemAt(0);
@@ -364,6 +386,9 @@ window['setup'] = function setup() {
         })
         .then(lyrView => {
           layerView = lyrView;
+          query = layerView.layer.createQuery();
+          query.distance = 5; // queries all features within 5 miles of the point
+          query.units = 'kilometers';
           return watchUtils.whenFalseOnce(layerView, 'updating');
         })
         .then(() => {
@@ -371,172 +396,152 @@ window['setup'] = function setup() {
             // disables navigation by pointer drag
             event.stopPropagation();
             // stats queries
-            const query = layerView.layer.createQuery();
+            // const query = layerView.layer.createQuery();
             query.geometry = view.toMap(event); // converts the screen point to a map point
-            query.distance = 5; // queries all features within 5 miles of the point
-            query.units = 'kilometers';
+            return highlightMap(query).then(() => {
+              // pattern calc
+              const patternQuery = query.clone();
 
-            // Prepare Query
+              // -----------------------------
+              // Statistics
+              // -----------------------------
 
-            // pattern calc
-            const patternQuery = query.clone();
-
-            // -----------------------------
-            // Statistics
-            // -----------------------------
-
-            // get an average of values
-            const avgStats = fieldNames.map(field => ({
-              onStatisticField: field,
-              outStatisticFieldName: `Avg_${field}`,
-              statisticType: 'avg'
-            }));
-            // to get an average of the variances
-            const varStats = fieldNames.map(field => ({
-              onStatisticField: field,
-              outStatisticFieldName: `Var_${field}`,
-              statisticType: 'var'
-            }));
-            // to get an above or below
-            const stddevStats = fieldNames.map(field => ({
-              onStatisticField: field,
-              outStatisticFieldName: `StdDev_${field}`,
-              statisticType: 'stddev'
-            }));
-            patternQuery.outStatistics = [
-              ...avgStats,
-              ...varStats,
-              ...stddevStats,
-              // to get the total count
-              {
-                onStatisticField: 'HINCBASECY',
-                outStatisticFieldName: 'Count_Est_Total',
-                statisticType: 'count'
-              }
-            ] as any;
-            layerView.queryFeatures(patternQuery).then(({ features }) => {
-              if (!features.length) {
-                return;
-              }
-              const attr = features[0].attributes;
-              const { Count_Est_Total } = attr;
-              if (!Count_Est_Total) return;
-              drums.setBPM(Count_Est_Total);
-              const [_, ...names] = fieldNames;
-              // std dev of houeholds
-              const totalStdDev = names.reduce((a, b) => a + attr[`StdDev_${b}`], 0);
-              const avgStdDev = totalStdDev / STEPS;
-              // avg number of households
-              const avgHH = names.reduce((a, b) => a + attr[`Avg_${b}`], 0) / STEPS;
-              avgPattern = names.map(field => (attr[`Avg_${field}`] > avgHH ? 1 : 0));
-              stdDevPattern = names.map(field => (attr[`StdDev_${field}`] > avgStdDev ? 1 : 0));
-              avgShiftedPattern = [];
-              // fill the gaps from avg and std dev
-              for (let i = 0; i < STEPS; i++) {
-                const a = avgPattern[i];
-                const b = stdDevPattern[i];
-                let c = 0;
-                // fill the gaps
-                if (a === 0 && b === 0) {
-                  c = 1;
+              // get an average of values
+              const avgStats = fieldNames.map(field => ({
+                onStatisticField: field,
+                outStatisticFieldName: `Avg_${field}`,
+                statisticType: 'avg'
+              }));
+              // to get an average of the variances
+              const varStats = fieldNames.map(field => ({
+                onStatisticField: field,
+                outStatisticFieldName: `Var_${field}`,
+                statisticType: 'var'
+              }));
+              // to get an above or below
+              const stddevStats = fieldNames.map(field => ({
+                onStatisticField: field,
+                outStatisticFieldName: `StdDev_${field}`,
+                statisticType: 'stddev'
+              }));
+              patternQuery.outStatistics = [
+                ...avgStats,
+                ...varStats,
+                ...stddevStats,
+                // to get the total count
+                {
+                  onStatisticField: 'TOTHH_CY',
+                  outStatisticFieldName: 'Count_Est_Total',
+                  statisticType: 'count'
                 }
-                avgShiftedPattern.push(c);
-              }
-
-              // avgShiftedPattern = avgPattern.map(a => a ^= 1);
-
-              // hh pattern
-              if (hPatInput.checked) {
-                hPhrase.sequence = avgPattern;
-                drawPattern({
-                  elements: hhElements,
-                  pattern: avgPattern
-                });
-              }
-              // snare pattern
-              if (sPatInput.checked) {
-                sPhrase.sequence = stdDevPattern;
-                drawPattern({
-                  elements: snareElements,
-                  pattern: stdDevPattern
-                });
-              }
-              // clap pattern
-              if (cPatInput.checked) {
-                cPhrase.sequence = avgShiftedPattern;
-                drawPattern({
-                  elements: clapElements,
-                  pattern: avgShiftedPattern
-                });
-              }
-
-              infoCount.innerText = Count_Est_Total;
-              avgIncomeText.innerText = avgHH.toFixed(1);
-              stdDevIncomeText.innerText = avgStdDev.toFixed(1);
-            });
-
-            // histogram stuff
-            let average: any = null;
-            const params: {
-              layer: __esri.FeatureLayer;
-              field: string;
-              numBins: number;
-              features: any[];
-            } = {
-              layer: layerView.layer,
-              field: 'AGGHINC_CY',
-              numBins: STEPS,
-              features: []
-            };
-            layerView
-              .queryFeatures(query)
-              .then(({ features }) => {
-                if (features.length) {
-                  params.features = features;
-                  return getAverage(params);
+              ] as any;
+              layerView.queryFeatures(patternQuery).then(({ features }) => {
+                if (!features.length) {
+                  return;
                 }
-              })
-              .then(avg => {
-                average = avg;
-                return histogram(params);
-              })
-              .then(histogramResult => {
-                if (!histogramResult) return;
-                const { bins, minValue, maxValue } = histogramResult;
-                totalAggIncomeText.innerText = formatter.format(maxValue);
-                histogramWidget.set({
-                  average,
-                  bins,
-                  min: minValue,
-                  max: maxValue,
-                  values: [minValue, maxValue]
-                });
-                const avgCount = bins.reduce((a, b) => a + b.count, 0) / bins.length;
-                const bassPattern = bins.map(x => (x.count > avgCount ? 1 : 0));
-                avgBinCountText.innerText = avgCount.toFixed(1);
-                bPhrase.sequence = bassPattern;
-                if (bPatInput.checked) {
+                const attr = features[0].attributes;
+                const { Count_Est_Total } = attr;
+                if (!Count_Est_Total) return;
+                drums.setBPM(Count_Est_Total);
+                const [_, ...names] = fieldNames;
+                // std dev of houeholds
+                const totalStdDev = names.reduce((a, b) => a + attr[`StdDev_${b}`], 0);
+                const avgStdDev = totalStdDev / STEPS;
+                // avg number of households
+                const avgHH = names.reduce((a, b) => a + attr[`Avg_${b}`], 0) / STEPS;
+                avgPattern = names.map(field => (attr[`Avg_${field}`] > avgHH ? 1 : 0));
+                stdDevPattern = names.map(field => (attr[`StdDev_${field}`] > avgStdDev ? 1 : 0));
+                avgShiftedPattern = [];
+                // fill the gaps from avg and std dev
+                for (let i = 0; i < STEPS; i++) {
+                  const a = avgPattern[i];
+                  const b = stdDevPattern[i];
+                  let c = 0;
+                  // fill the gaps
+                  if (a === 0 && b === 0) {
+                    c = 1;
+                  }
+                  avgShiftedPattern.push(c);
+                }
+
+                // hh pattern
+                if (hPatInput.checked) {
+                  hPhrase.sequence = avgPattern;
                   drawPattern({
-                    elements: bassElements,
-                    pattern: bassPattern
+                    elements: hhElements,
+                    pattern: avgPattern
                   });
                 }
-              })
-              .catch(error => console.warn(error));
+                // snare pattern
+                if (sPatInput.checked) {
+                  sPhrase.sequence = stdDevPattern;
+                  drawPattern({
+                    elements: snareElements,
+                    pattern: stdDevPattern
+                  });
+                }
+                // clap pattern
+                if (cPatInput.checked) {
+                  cPhrase.sequence = avgShiftedPattern;
+                  drawPattern({
+                    elements: clapElements,
+                    pattern: avgShiftedPattern
+                  });
+                }
 
-            layerView.queryObjectIds(query).then(oids => {
-              if (!oids.length) {
-                // reset layerView effect
-                layerView.effect = null as any;
-                return;
-              }
+                infoCount.innerText = Count_Est_Total;
+                avgIncomeText.innerText = avgHH.toFixed(1);
+                stdDevIncomeText.innerText = avgStdDev.toFixed(1);
+              });
 
-              layerView.effect = {
-                filter: {
-                  where: `OBJECTID in (${oids.join(',')})`
-                },
-                excludedEffect: 'grayscale(100%) opacity(30%)'
-              } as any;
+              // histogram stuff
+              let average: any = null;
+              const params: {
+                layer: __esri.FeatureLayer;
+                field: string;
+                numBins: number;
+                features: any[];
+              } = {
+                layer: layerView.layer,
+                field: 'AGGHINC_CY',
+                numBins: STEPS,
+                features: []
+              };
+              layerView
+                .queryFeatures(query)
+                .then(({ features }) => {
+                  if (features.length) {
+                    params.features = features;
+                    return getAverage(params);
+                  }
+                })
+                .then(avg => {
+                  average = avg;
+                  return histogram(params);
+                })
+                .then(histogramResult => {
+                  if (!histogramResult) return;
+                  const { bins, minValue, maxValue } = histogramResult;
+                  totalAggIncomeText.innerText = formatter.format(maxValue);
+                  histogramWidget.set({
+                    average,
+                    bins,
+                    min: minValue,
+                    max: maxValue,
+                    values: [minValue, maxValue]
+                  });
+                  const avgCount = bins.reduce((a, b) => a + b.count, 0) / bins.length;
+                  const bassPattern = bins.map(x => (x.count > avgCount ? 1 : 0));
+                  avgBinCountText.innerText = avgCount.toFixed(1);
+                  bPhrase.sequence = bassPattern;
+                  if (bPatInput.checked) {
+                    drawPattern({
+                      elements: bassElements,
+                      pattern: bassPattern
+                    });
+                  }
+                })
+                .catch(error => console.warn(error));
             });
           });
         });
