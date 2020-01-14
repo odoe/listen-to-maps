@@ -17,14 +17,10 @@ import histogram from 'esri/renderers/smartMapping/statistics/histogram';
 import summaryStatistics from 'esri/renderers/smartMapping/statistics/summaryStatistics';
 import HistogramRangeSlider from 'esri/widgets/HistogramRangeSlider';
 
+const WEBMAP_ID = '936d99f8b69246d28d6deed9461d82f7';
+
 const noop = () => {};
 
-// let hh, clap, bass, snare; // INSTRUMENT
-// let hPhrase, cPhrase, bPhrase, sPhrase; // INSTRUMENT PHRASE
-// let drums; // PART
-
-// let delay;
-// let fft;
 let reverb;
 
 const attackLevel = 1.0;
@@ -68,10 +64,10 @@ const formatter = new Intl.NumberFormat('en-US', {
   currency: 'USD'
 });
 
-const hh = new p5.SoundFile('assets/hh_sample.mp3', noop);
-const clap = new p5.SoundFile('assets/clap_sample.mp3', noop);
-const bass = new p5.SoundFile('assets/bass_sample.mp3', noop);
-const snare = new p5.SoundFile('assets/snare_ups_sample.mp3', noop);
+const hh = new p5.SoundFile('assets/808-open-hat-1.mp3', noop);
+const clap = new p5.SoundFile('assets/808-clap.mp3', noop);
+const bass = new p5.SoundFile('assets/processed-909.mp3', noop);
+const snare = new p5.SoundFile('assets/808-snare-drum-1.mp3', noop);
 
 const hPat = [0, 1, 0, 1, 0, 1, 0, 1, 0, 1];
 const cPat = [0, 0, 0, 1, 0, 0, 1, 0, 1, 0];
@@ -248,7 +244,7 @@ window['setup'] = function setup() {
 
   const webmap = new WebMap({
     portalItem: {
-      id: '5b353dd100b5497e9274b42d78f9ff55'
+      id: WEBMAP_ID
     }
   });
 
@@ -263,8 +259,6 @@ window['setup'] = function setup() {
       const view = new MapView({
         map: webmap,
         container: 'viewDiv'
-        // zoom: 8,
-        // center: [-112.074, 33.4484]
       });
 
       // widgets
