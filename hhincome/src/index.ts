@@ -70,10 +70,10 @@ const clap = new p5.SoundFile('assets/808-clap.mp3', noop);
 const bass = new p5.SoundFile('assets/processed-909.mp3', noop);
 const snare = new p5.SoundFile('assets/808-snare-drum-1.mp3', noop);
 
-const hPat = [0, 1, 0, 1, 0, 1, 0, 1, 0, 1];
-const cPat = [0, 0, 0, 1, 0, 0, 1, 0, 1, 0];
-const bPat = [0, 1, 0, 1, 0, 1, 0, 1, 0, 0];
-const sPat = [0, 0, 1, 0, 0, 1, 0, 0, 1, 0];
+const hPat = [0, 0, 0, 0, 0, 1, 0, 0];
+const cPat = [0, 0, 0, 1, 0, 0, 0, 1];
+const bPat = [0, 0, 0, 1, 0, 0, 0, 1];
+const sPat = [0, 0, 0, 1, 0, 0, 0, 1];
 
 window['setup'] = function setup() {
   window.createCanvas(1, 1);
@@ -444,7 +444,7 @@ window['setup'] = function setup() {
                 if (!Count_Est_Total) return;
                 drums.setBPM(Count_Est_Total);
                 const [_, ...names] = fieldNames;
-                // std dev of houeholds
+                // std dev of households
                 const totalStdDev = names.reduce((a, b) => a + attr[`StdDev_${b}`], 0);
                 const avgStdDev = totalStdDev / STEPS;
                 // avg number of households
