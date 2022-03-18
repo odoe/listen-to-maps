@@ -6,11 +6,11 @@ This repo contains demos and the [PowerPoint](https://odoe.github.io/listen-to-m
 
 ## Demos
 
-## [Earthquake Map](https://odoe.github.io/listen-to-maps/time.html) 🌎
+## [Earthquake Map](https://odoe.github.io/listen-to-maps/earthquakes/output/dist/) 🌎
 
 An audio/visual exploration of Earhquake data
 
-## [Household Income Map](https://odoe.github.io/listen-to-maps/stats.html) 💰
+## [Household Income Map](https://odoe.github.io/listen-to-maps/hhincome/output/dist/) 💰
 
 An experimental visual and audio exploration of household income
 
